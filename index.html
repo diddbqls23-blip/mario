@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🍄 슈퍼 마리오</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:#c4d8f0;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      overflow:hidden;
+      touch-action:none;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    #game-wrap {
+      position:relative;
+      display:inline-block;
+    }
+    canvas {
+      display:block;
+      image-rendering:pixelated;
+    }
+
+    /* ── 모바일 터치 버튼 ── */
+    #touch-ui {
+      display:none;
+      position:absolute;
+      bottom:0; left:0; right:0;
+      pointer-events:none;
+      height:120px;
+    }
+    /* 좌측 방향키 */
+    #touch-left {
+      position:absolute;
+      left:14px; bottom:20px;
+      width:68px; height:68px;
+      pointer-events:all;
+    }
+    #touch-right {
+      position:absolute;
+      left:90px; bottom:20px;
+      width:68px; height:68px;
+      pointer-events:all;
+    }
+    /* 우측 액션 버튼 */
+    #btn-jump {
+      position:absolute;
+      right:14px; bottom:28px;
+      width:76px; height:76px;
+      pointer-events:all;
+    }
+    #btn-fire {
+      position:absolute;
+      right:100px; bottom:48px;
+      width:60px; height:60px;
+      pointer-events:all;
+    }
+    #btn-run {
+      position:absolute;
+      right:100px; bottom:10px;
+      width:60px; height:40px;
+      pointer-events:all;
+    }
+    #btn-suck {
+      position:absolute;
+      right:170px; bottom:48px;
+      width:60px; height:60px;
+      pointer-events:all;
+    }
+
+    /* 버튼 공통 스타일 */
+    .touch-btn {
+      border-radius:50%;
+      background:rgba(255,255,255,0.55);
+      border:2.5px solid rgba(0,0,0,0.3);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:22px;
+      color:rgba(20,20,60,0.9);
+      font-weight:bold;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      transition:background 0.08s, transform 0.08s;
+      backdrop-filter:blur(3px);
+      text-shadow:0 1px 2px rgba(255,255,255,0.8);
+    }
+    .touch-btn:active, .touch-btn.pressed {
+      background:rgba(255,255,255,0.8);
+      transform:scale(0.92);
+    }
+    #btn-jump {
+      border-radius:50%;
+      background:rgba(80,160,255,0.45);
+      border-color:rgba(30,100,220,0.6);
+      font-size:28px;
+    }
+    #btn-fire {
+      border-radius:50%;
+      background:rgba(255,130,30,0.45);
+      border-color:rgba(200,80,0,0.6);
+    }
+    #btn-suck {
+      border-radius:50%;
+      background:rgba(160,60,255,0.4);
+      border-color:rgba(120,0,220,0.6);
+    }
+    #btn-run {
+      border-radius:12px;
+      font-size:13px;
+    }
+
+    @media (pointer:coarse) {
+      #touch-ui { display:block; }
+    }
+    @media (max-width:900px) {
+      #touch-ui { display:block; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-wrap">
+    <canvas id="c"></canvas>
+
+    <div id="touch-ui">
+      <!-- 좌측: 이동 버튼 -->
+      <div id="btn-left" class="touch-btn" style="position:absolute;left:14px;bottom:20px;width:68px;height:68px;">◀</div>
+      <div id="btn-right" class="touch-btn" style="position:absolute;left:90px;bottom:20px;width:68px;height:68px;">▶</div>
+
+      <!-- 우측: 점프/불꽃/흡입/달리기 -->
+      <div id="btn-jump" class="touch-btn">↑</div>
+      <div id="btn-fire" class="touch-btn">🔥</div>
+      <div id="btn-suck" class="touch-btn">🌀</div>
+      <div id="btn-run" class="touch-btn">RUN</div>
+    </div>
+  </div>
+
+  <script src="js/canvas.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/level.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/physics.js"></script>
+  <script src="js/update.js"></script>
+  <script src="js/draw.js"></script>
+  <script src="js/main.js"></script>
+
+  <script>
+    // 터치 UI를 canvas 크기에 맞게 조정
+    function resizeTouchUI(){
+      const wrap = document.getElementById('game-wrap');
+      const c = document.getElementById('c');
+      wrap.style.width  = c.offsetWidth  + 'px';
+      wrap.style.height = c.offsetHeight + 'px';
+    }
+    window.addEventListener('resize', resizeTouchUI);
+    window.addEventListener('load',   resizeTouchUI);
+  </script>
+</body>
+</html>
