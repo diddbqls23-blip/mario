@@ -609,9 +609,17 @@ const PC={
   blush:'#ffaaaa', eye:'#1a0800', eyeW:'#ffffff',
   mouth:'#c07858', brow:'#222222',
 };
+// 2P 파란 도복
+const PC2={
+  hair:'#001a80', skin:'#f5c08a', skinD:'#d4905a',
+  dobok:'#2255cc', dobS:'#1a44aa',
+  belt:'#dd4400', beltH:'#ff6600',
+  blush:'#ffaaaa', eye:'#1a0800', eyeW:'#ffffff',
+  mouth:'#c07858', brow:'#001a80',
+};
 
-function tkdSmall(bx,by,state,frame){
-  const P=PC;
+function tkdSmall(bx,by,state,frame,pal){
+  const P=pal||PC;
   ctx.fillStyle=P.hair;
   ctx.fillRect(bx+2,by+5,20,6);
   ctx.fillRect(bx+0,by+7,3,6);
@@ -645,8 +653,8 @@ function tkdSmall(bx,by,state,frame){
   ctx.fillStyle=P.skinD; ctx.fillRect(bx+0,by+32+lo,8,1); ctx.fillRect(bx+12,by+32-lo,8,1);
 }
 
-function tkdBig(bx,by,state,frame){
-  const P=PC;
+function tkdBig(bx,by,state,frame,pal){
+  const P=pal||PC;
   ctx.fillStyle=P.hair;
   ctx.fillRect(bx+1,by+7,22,8); ctx.fillRect(bx+0,by+10,3,10); ctx.fillRect(bx+21,by+10,3,10);
   ctx.beginPath(); ctx.arc(bx+7, by+7,5,Math.PI,0); ctx.fill();
@@ -678,13 +686,14 @@ function tkdBig(bx,by,state,frame){
   ctx.fillStyle=P.skinD; ctx.fillRect(bx+0,by+52+lo,10,1); ctx.fillRect(bx+12,by+52-lo,10,1);
 }
 
-function tkdDead(bx,by){
-  ctx.fillStyle=PC.dobok; ctx.fillRect(bx+1,by+4,22,10);
-  ctx.fillStyle=PC.belt;  ctx.fillRect(bx+1,by+10,22,3);
-  ctx.fillStyle=PC.skin;  ctx.fillRect(bx+2,by+0,20,6);
-  ctx.fillStyle=PC.hair;  ctx.fillRect(bx+2,by+0,20,3);
-  ctx.fillStyle=PC.eye;   ctx.fillRect(bx+7,by+3,2,2); ctx.fillRect(bx+15,by+3,2,2);
-  ctx.fillStyle=PC.mouth;
+function tkdDead(bx,by,pal){
+  const P=pal||PC;
+  ctx.fillStyle=P.dobok; ctx.fillRect(bx+1,by+4,22,10);
+  ctx.fillStyle=P.belt;  ctx.fillRect(bx+1,by+10,22,3);
+  ctx.fillStyle=P.skin;  ctx.fillRect(bx+2,by+0,20,6);
+  ctx.fillStyle=P.hair;  ctx.fillRect(bx+2,by+0,20,3);
+  ctx.fillStyle=P.eye;   ctx.fillRect(bx+7,by+3,2,2); ctx.fillRect(bx+15,by+3,2,2);
+  ctx.fillStyle=P.mouth;
   ctx.fillRect(bx+6,by+2,4,1); ctx.fillRect(bx+8,by+3,1,2);
   ctx.fillRect(bx+14,by+2,4,1); ctx.fillRect(bx+16,by+3,1,2);
 }
@@ -822,6 +831,48 @@ function drawPlayer(){
     ctx.restore();
     ctx.globalAlpha=1;
   }
+}
+
+// ── Remote Player (멀티플레이어 상대방) ──────────────────────────
+function drawRemotePlayer(){
+  if(typeof remotePlayer==='undefined'||!remotePlayer||!isMultiplayer) return;
+  const p  = remotePlayer;
+  const w  = p.w || 24;
+  const sx = lpx(p.x), sy = lpy(p.y);
+  if(sx+w<-10||sx>W+10) return;
+
+  // 별 무적 글로우
+  if(p.starTimer>0){
+    const rc=RAINBOW[Math.floor(Date.now()/80)%RAINBOW.length];
+    ctx.save(); ctx.shadowColor=rc; ctx.shadowBlur=20;
+  }
+  // 투명화
+  if(p.invisibleTimer>0) ctx.globalAlpha=0.28;
+  // 무적 깜빡임
+  if(p.invincible>0&&p.starTimer===0&&Math.floor(p.invincible/4)%2===0){
+    ctx.globalAlpha=0; ctx.globalAlpha=1; // 스킵
+    if(p.starTimer===0){ ctx.restore&&ctx.restore(); ctx.globalAlpha=1; return; }
+  }
+
+  ctx.save();
+  const big = p.big||p.giant;
+  if(p.facing===-1){ ctx.scale(-1,1); ctx.translate(-sx*2-w,0); }
+  if(big) tkdBig(sx,sy,p.state||'idle',p.frame||0,PC2);
+  else    tkdSmall(sx,sy,p.state||'idle',p.frame||0,PC2);
+  ctx.restore();
+
+  if(p.starTimer>0) ctx.restore();
+  ctx.globalAlpha=1;
+
+  // 플레이어 라벨
+  const label = (typeof myPlayerNum!=='undefined'&&myPlayerNum===2) ? '1P' : '2P';
+  const lc    = label==='2P' ? '#2255cc' : '#cc2222';
+  ctx.save();
+  ctx.font='bold 11px Arial'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillStyle=lc;
+  ctx.shadowColor='#fff'; ctx.shadowBlur=4;
+  ctx.fillText(label, sx+w/2, sy-2);
+  ctx.restore();
 }
 
 // ── Enemies ──────────────────────────────────────────────────────
@@ -1556,6 +1607,7 @@ function draw(){
   drawEnemies();
   drawBoss();
   drawPlayer();
+  drawRemotePlayer();
   drawParticles();
   drawFloatTexts();
   drawScreenFlash();

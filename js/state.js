@@ -91,8 +91,9 @@ function initLevel(){
   fireballs=[]; screenFlash=null; stageFireworks=[];
   boss=null;
 
+  const spawnX = (typeof isMultiplayer!=='undefined' && isMultiplayer && myPlayerNum===2) ? 120 : 80;
   player={
-    x:80, y:GND_Y-SML_H,
+    x:spawnX, y:GND_Y-SML_H,
     w:24, h:SML_H,
     vx:0, vy:0,
     onGround:false, facing:1,

@@ -36,16 +36,16 @@ window.addEventListener('keydown', e => {
   keys[e.code] = true;
   if(e.code==='Space'||e.code==='ArrowUp'||e.code==='ArrowLeft'||e.code==='ArrowRight'||e.code==='KeyX') e.preventDefault();
 
-  // 상점 열기 / 닫기
-  if(!e.repeat && (e.code==='Escape'||e.code==='KeyS')){
+  // 상점 열기 / 닫기 (Escape 전용; 멀티플레이 P2의 S키 충돌 방지)
+  if(!e.repeat && e.code==='Escape'){
     if(gameState==='playing'){ gameState='shop'; shopSelectedIdx=0; shopMsg=null; return; }
     if(gameState==='shop'){ gameState='playing'; return; }
   }
 
-  // 상점 내 조작 (게임 조작과 분리)
+  // 상점 내 조작
   if(gameState==='shop'){
     if(!e.repeat){
-      if(e.code==='ArrowUp'||e.code==='KeyW'){
+      if(e.code==='ArrowUp'){
         shopSelectedIdx=(shopSelectedIdx-1+SHOP_ITEMS.length)%SHOP_ITEMS.length;
       }
       if(e.code==='ArrowDown'){
@@ -55,17 +55,24 @@ window.addEventListener('keydown', e => {
         buyShopItem();
       }
     }
-    return; // 상점 열린 동안 게임 입력 차단
+    return;
   }
 
-  if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW'){
-    if(!e.repeat) doJump();
+  // 점프 트리거: P1(솔로/방장)=Space/ArrowUp, P2(참여자)=W
+  const isP2 = typeof isMultiplayer!=='undefined' && isMultiplayer && myPlayerNum===2;
+  if(isP2){
+    if(e.code==='KeyW' && !e.repeat) doJump();
+  } else {
+    if((e.code==='Space'||e.code==='ArrowUp') && !e.repeat) doJump();
   }
 });
 window.addEventListener('keyup', e => {
   keys[e.code] = false;
-  if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW'){
-    if(player) player.jumpHeld = false;
+  const isP2 = typeof isMultiplayer!=='undefined' && isMultiplayer && myPlayerNum===2;
+  if(isP2){
+    if(e.code==='KeyW' && player) player.jumpHeld = false;
+  } else {
+    if((e.code==='Space'||e.code==='ArrowUp') && player) player.jumpHeld = false;
   }
 });
 

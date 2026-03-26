@@ -143,10 +143,12 @@ function update(){
     sndFireball();
   }
 
-  const left =keys['ArrowLeft']||keys['KeyA'];
-  const right =keys['ArrowRight']||keys['KeyD'];
-  const jumpK =keys['Space']||keys['ArrowUp']||keys['KeyW'];
-  const shift =keys['ShiftLeft']||keys['ShiftRight'];
+  // P2(참여자)는 WASD, P1(방장/솔로)는 방향키
+  const _isP2 = typeof isMultiplayer!=='undefined' && isMultiplayer && myPlayerNum===2;
+  const left  = _isP2 ? keys['KeyA']  : (keys['ArrowLeft'] ||keys['KeyA']);
+  const right = _isP2 ? keys['KeyD']  : (keys['ArrowRight']||keys['KeyD']);
+  const jumpK = _isP2 ? keys['KeyW']  : (keys['Space']||keys['ArrowUp']||keys['KeyW']);
+  const shift = keys['ShiftLeft']||keys['ShiftRight'];
 
   const abilitySpeedMult = (p.blackholeAbility==='speed' && p.blackholeAbilityTimer>0) ? 1.8 : 1.0;
   const shopSpeedMult = (p.speedBoostTimer > 0) ? 1.5 : 1.0;

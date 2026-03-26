@@ -5,6 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>🍄 슈퍼 마리오</title>
   <style>
+    /* ── 멀티플레이어 로비 ── */
+    #lobby {
+      position:fixed; inset:0; z-index:999;
+      display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg,#1a0a2e 0%,#2a0e4a 50%,#0a1a3a 100%);
+    }
+    .lobby-box {
+      background:rgba(255,255,255,0.07);
+      border:1.5px solid rgba(255,255,255,0.18);
+      border-radius:24px; padding:40px 48px;
+      text-align:center; width:360px;
+      backdrop-filter:blur(12px);
+      box-shadow:0 8px 40px rgba(0,0,0,0.5);
+    }
+    .lobby-title { font-size:32px; font-weight:900; color:#fff; margin-bottom:4px; text-shadow:0 0 20px rgba(200,120,255,0.8); }
+    .lobby-sub   { font-size:13px; color:#c0a0e0; margin-bottom:28px; }
+    .lb-btn {
+      display:block; width:100%; margin:10px 0;
+      padding:13px 0; border:none; border-radius:14px;
+      font-size:16px; font-weight:800; cursor:pointer;
+      transition:transform .12s;
+    }
+    .lb-btn:hover { transform:scale(1.04); }
+    .lb-btn.solo   { background:linear-gradient(135deg,#4caf50,#2e7d32); color:#fff; }
+    .lb-btn.create { background:linear-gradient(135deg,#e91e8c,#9c27b0); color:#fff; }
+    .lb-divider { color:#886aa0; margin:8px 0 4px; font-size:12px; }
+    .lb-row { display:flex; gap:8px; margin-top:4px; }
+    .lb-input {
+      flex:1; padding:11px 14px; border-radius:10px; border:none;
+      font-size:15px; font-weight:700; letter-spacing:3px;
+      background:rgba(255,255,255,0.12); color:#fff; outline:none;
+      text-transform:uppercase;
+    }
+    .lb-input::placeholder { color:#886aa0; letter-spacing:1px; font-weight:400; }
+    .lb-btn.join { padding:11px 18px; border-radius:10px; background:linear-gradient(135deg,#2196f3,#0d47a1); color:#fff; font-size:14px; white-space:nowrap; margin:0; width:auto; }
+    #mp-error { color:#ff6666; font-size:13px; margin-top:10px; display:none; }
+    #mp-room  { display:none; }
+    .mp-code-label { color:#c0a0e0; font-size:13px; margin:14px 0 6px; }
+    .mp-code-val   { font-size:38px; font-weight:900; letter-spacing:8px; color:#ffd700; text-shadow:0 0 16px rgba(255,215,0,0.7); }
+    #mp-waiting { color:#c0a0e0; font-size:13px; margin-top:10px; }
+    #mp-p2ready { color:#66ff88; font-size:14px; font-weight:700; display:none; margin-top:8px; }
+    .lb-back { color:#886aa0; font-size:12px; cursor:pointer; margin-top:14px; display:inline-block; }
+    .lb-back:hover { color:#c0a0e0; }
+  </style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       background:#c4d8f0;
@@ -124,6 +168,36 @@
   </style>
 </head>
 <body>
+
+  <!-- ── 멀티플레이어 로비 오버레이 ── -->
+  <div id="lobby">
+    <div class="lobby-box">
+      <div class="lobby-title">🍄 슈퍼 마리오</div>
+      <div class="lobby-sub">함께 플레이하거나 혼자 도전하세요!</div>
+
+      <div id="mp-main">
+        <button class="lb-btn solo"   onclick="soloPlay()">🎮 혼자 플레이</button>
+        <button class="lb-btn create" onclick="createRoom()">🏠 방 만들기 (1P)</button>
+        <div class="lb-divider">── 또는 방 참여 ──</div>
+        <div class="lb-row">
+          <input id="mp-join-input" class="lb-input" placeholder="방 코드" maxlength="6"
+            onkeydown="if(event.key==='Enter') joinRoom()">
+          <button class="lb-btn join" onclick="joinRoom()">참여 🚀</button>
+        </div>
+      </div>
+
+      <div id="mp-room">
+        <div class="mp-code-label">방 코드를 친구에게 알려주세요</div>
+        <div class="mp-code-val" id="mp-code">------</div>
+        <div id="mp-waiting">⏳ 2P 연결 대기 중...</div>
+        <div id="mp-p2ready">✅ 2P 연결됨! 게임 시작!</div>
+        <span class="lb-back" onclick="location.reload()">← 취소</span>
+      </div>
+
+      <div id="mp-error"></div>
+    </div>
+  </div>
+
   <div id="game-wrap">
     <canvas id="c"></canvas>
 
@@ -148,6 +222,8 @@
   <script src="js/physics.js"></script>
   <script src="js/update.js"></script>
   <script src="js/draw.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/multiplayer.js"></script>
   <script src="js/main.js"></script>
 
   <script>
