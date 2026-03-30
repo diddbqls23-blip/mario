@@ -58,22 +58,12 @@ window.addEventListener('keydown', e => {
     return;
   }
 
-  // 점프 트리거: P1(솔로/방장)=Space/ArrowUp, P2(참여자)=W
-  const isP2 = typeof isMultiplayer!=='undefined' && isMultiplayer && myPlayerNum===2;
-  if(isP2){
-    if(e.code==='KeyW' && !e.repeat) doJump();
-  } else {
-    if((e.code==='Space'||e.code==='ArrowUp') && !e.repeat) doJump();
-  }
+  // 점프 트리거: Space 또는 ArrowUp (P1/P2 공통)
+  if((e.code==='Space'||e.code==='ArrowUp') && !e.repeat) doJump();
 });
 window.addEventListener('keyup', e => {
   keys[e.code] = false;
-  const isP2 = typeof isMultiplayer!=='undefined' && isMultiplayer && myPlayerNum===2;
-  if(isP2){
-    if(e.code==='KeyW' && player) player.jumpHeld = false;
-  } else {
-    if((e.code==='Space'||e.code==='ArrowUp') && player) player.jumpHeld = false;
-  }
+  if((e.code==='Space'||e.code==='ArrowUp') && player) player.jumpHeld = false;
 });
 
 // ── 터치 버튼 ─────────────────────────────────────────────────

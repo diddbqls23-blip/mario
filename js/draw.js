@@ -609,14 +609,178 @@ const PC={
   blush:'#ffaaaa', eye:'#1a0800', eyeW:'#ffffff',
   mouth:'#c07858', brow:'#222222',
 };
-// 2P 파란 도복
+// 2P 공주 팔레트
 const PC2={
-  hair:'#001a80', skin:'#f5c08a', skinD:'#d4905a',
-  dobok:'#2255cc', dobS:'#1a44aa',
-  belt:'#dd4400', beltH:'#ff6600',
+  crown:'#ffd700', crownGem:'#ff4488',
+  hair:'#ffe080', hairD:'#c89030',
+  skin:'#f5c08a', skinD:'#d4905a',
+  dress:'#ff88cc', dressD:'#cc3388', dressL:'#ffbbee',
+  collar:'#fffaff',
   blush:'#ffaaaa', eye:'#1a0800', eyeW:'#ffffff',
-  mouth:'#c07858', brow:'#001a80',
+  mouth:'#cc3366', brow:'#8b5a00',
+  shoes:'#dd5588',
 };
+
+// ── 2P 공주 캐릭터 (픽셀아트) ────────────────────────────────────
+function princessSmall(bx,by,state,frame){
+  const P=PC2;
+  // 왕관
+  ctx.fillStyle=P.crown;
+  ctx.fillRect(bx+4, by+2, 2,3);
+  ctx.fillRect(bx+11,by+0, 2,4);
+  ctx.fillRect(bx+18,by+2, 2,3);
+  ctx.fillRect(bx+3, by+4,18,2);
+  ctx.fillStyle=P.crownGem;
+  ctx.fillRect(bx+11,by+4, 2,2);
+  // 머리카락
+  ctx.fillStyle=P.hair;
+  ctx.fillRect(bx+1, by+5,22,5);
+  ctx.fillRect(bx+0, by+7, 2,9);
+  ctx.fillRect(bx+22,by+7, 2,9);
+  ctx.fillStyle=P.hairD;
+  ctx.fillRect(bx+1, by+9, 2,3);
+  ctx.fillRect(bx+21,by+9, 2,3);
+  // 얼굴
+  ctx.fillStyle=P.skin;
+  ctx.fillRect(bx+3,by+8,18,9);
+  ctx.beginPath(); ctx.arc(bx+3, by+14,2,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(bx+21,by+14,2,0,Math.PI*2); ctx.fill();
+  // 눈썹
+  ctx.fillStyle=P.brow;
+  ctx.fillRect(bx+5, by+9,4,1);
+  ctx.fillRect(bx+15,by+9,4,1);
+  // 눈
+  ctx.fillStyle=P.eye;
+  ctx.fillRect(bx+5, by+11,5,4);
+  ctx.fillRect(bx+14,by+11,5,4);
+  ctx.fillStyle=P.eyeW;
+  ctx.fillRect(bx+6, by+11,3,3);
+  ctx.fillRect(bx+15,by+11,3,3);
+  ctx.fillStyle=P.eye;
+  ctx.fillRect(bx+7, by+12,2,2);
+  ctx.fillRect(bx+16,by+12,2,2);
+  ctx.fillStyle=P.eyeW;
+  ctx.fillRect(bx+7, by+11,1,1);
+  ctx.fillRect(bx+16,by+11,1,1);
+  // 볼터치
+  ctx.fillStyle=P.blush;
+  ctx.fillRect(bx+3, by+14,3,2);
+  ctx.fillRect(bx+18,by+14,3,2);
+  // 입 (미소)
+  ctx.fillStyle=P.mouth;
+  ctx.fillRect(bx+8, by+16,2,1);
+  ctx.fillRect(bx+14,by+16,2,1);
+  ctx.fillRect(bx+10,by+17,4,1);
+  // 레이스 collar
+  ctx.fillStyle=P.collar;
+  ctx.fillRect(bx+2,by+17,20,3);
+  // 팔
+  ctx.fillStyle=P.skin;
+  ctx.fillRect(bx+0, by+20,2,5);
+  ctx.fillRect(bx+22,by+20,2,5);
+  ctx.fillStyle=P.skinD;
+  ctx.fillRect(bx+0, by+24,2,1);
+  ctx.fillRect(bx+22,by+24,2,1);
+  // 드레스 몸통
+  ctx.fillStyle=P.dress;
+  ctx.fillRect(bx+1,by+20,22,7);
+  ctx.fillStyle=P.dressL;
+  ctx.fillRect(bx+2,by+20,4,5);
+  ctx.fillStyle=P.dressD;
+  ctx.fillRect(bx+18,by+20,3,7);
+  // 드레스 밑단 (플레어)
+  const lo=state==='run'?(frame%2===0?2:-2):0;
+  ctx.fillStyle=P.dress;
+  ctx.fillRect(bx+0,by+27,24,5);
+  ctx.fillStyle=P.dressL;
+  ctx.fillRect(bx+1,by+27,3,4);
+  ctx.fillStyle=P.dressD;
+  ctx.fillRect(bx+20,by+27,3,5);
+  // 신발
+  ctx.fillStyle=P.shoes;
+  ctx.fillRect(bx+2, by+27+lo,7,3);
+  ctx.fillRect(bx+15,by+27-lo,7,3);
+}
+
+function princessBig(bx,by,state,frame){
+  const P=PC2;
+  // 왕관
+  ctx.fillStyle=P.crown;
+  ctx.fillRect(bx+4, by+3, 3,5);
+  ctx.fillRect(bx+11,by+0, 3,7);
+  ctx.fillRect(bx+17,by+3, 3,5);
+  ctx.fillRect(bx+3, by+7,18,3);
+  ctx.fillStyle=P.crownGem;
+  ctx.fillRect(bx+10,by+7, 4,3);
+  // 머리카락
+  ctx.fillStyle=P.hair;
+  ctx.fillRect(bx+1, by+8, 22,8);
+  ctx.fillRect(bx+0, by+11, 3,15);
+  ctx.fillRect(bx+21,by+11, 3,15);
+  ctx.fillStyle=P.hairD;
+  ctx.fillRect(bx+1, by+14, 3,5);
+  ctx.fillRect(bx+20,by+14, 3,5);
+  // 얼굴
+  ctx.fillStyle=P.skin;
+  ctx.fillRect(bx+3,by+13,18,15);
+  ctx.beginPath(); ctx.arc(bx+3, by+22,3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(bx+21,by+22,3,0,Math.PI*2); ctx.fill();
+  // 눈썹
+  ctx.fillStyle=P.brow;
+  ctx.fillRect(bx+4, by+14,6,2);
+  ctx.fillRect(bx+14,by+14,6,2);
+  // 눈
+  ctx.fillStyle=P.eye;
+  ctx.fillRect(bx+4, by+17,6,5);
+  ctx.fillRect(bx+14,by+17,6,5);
+  ctx.fillStyle=P.eyeW;
+  ctx.fillRect(bx+5, by+17,4,4);
+  ctx.fillRect(bx+15,by+17,4,4);
+  ctx.fillStyle=P.eye;
+  ctx.fillRect(bx+7, by+18,2,3);
+  ctx.fillRect(bx+17,by+18,2,3);
+  ctx.fillStyle=P.eyeW;
+  ctx.fillRect(bx+7, by+17,2,1);
+  ctx.fillRect(bx+17,by+17,2,1);
+  // 볼터치
+  ctx.fillStyle=P.blush;
+  ctx.fillRect(bx+2, by+22,5,3);
+  ctx.fillRect(bx+17,by+22,5,3);
+  // 입
+  ctx.fillStyle=P.mouth;
+  ctx.fillRect(bx+7, by+26,3,2);
+  ctx.fillRect(bx+14,by+26,3,2);
+  ctx.fillRect(bx+10,by+28,4,2);
+  // 레이스 collar
+  ctx.fillStyle=P.collar;
+  ctx.fillRect(bx+2,by+28,20,5);
+  // 팔
+  ctx.fillStyle=P.skin;
+  ctx.fillRect(bx+0, by+33,3,8);
+  ctx.fillRect(bx+21,by+33,3,8);
+  ctx.fillStyle=P.skinD;
+  ctx.fillRect(bx+0, by+40,3,1);
+  ctx.fillRect(bx+21,by+40,3,1);
+  // 드레스 몸통
+  ctx.fillStyle=P.dress;
+  ctx.fillRect(bx+1,by+33,22,11);
+  ctx.fillStyle=P.dressL;
+  ctx.fillRect(bx+2,by+33,6,8);
+  ctx.fillStyle=P.dressD;
+  ctx.fillRect(bx+17,by+33,5,11);
+  // 드레스 밑단
+  const lo=state==='run'?(frame%2===0?4:-4):0;
+  ctx.fillStyle=P.dress;
+  ctx.fillRect(bx+0,by+44,24,8);
+  ctx.fillStyle=P.dressL;
+  ctx.fillRect(bx+1,by+44,4,6);
+  ctx.fillStyle=P.dressD;
+  ctx.fillRect(bx+19,by+44,4,8);
+  // 신발
+  ctx.fillStyle=P.shoes;
+  ctx.fillRect(bx+2, by+44+lo,8,5);
+  ctx.fillRect(bx+14,by+44-lo,8,5);
+}
 
 function tkdSmall(bx,by,state,frame,pal){
   const P=pal||PC;
@@ -857,8 +1021,8 @@ function drawRemotePlayer(){
   ctx.save();
   const big = p.big||p.giant;
   if(p.facing===-1){ ctx.scale(-1,1); ctx.translate(-sx*2-w,0); }
-  if(big) tkdBig(sx,sy,p.state||'idle',p.frame||0,PC2);
-  else    tkdSmall(sx,sy,p.state||'idle',p.frame||0,PC2);
+  if(big) princessBig(sx,sy,p.state||'idle',p.frame||0);
+  else    princessSmall(sx,sy,p.state||'idle',p.frame||0);
   ctx.restore();
 
   if(p.starTimer>0) ctx.restore();
