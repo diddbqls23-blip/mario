@@ -121,9 +121,17 @@ function update(){
 
   // Win walk
   if(p.state==='win'){
-    p.x+=2; p.winTimer++;
-    p.frameTimer++; if(p.frameTimer>8){p.frame=(p.frame+1)%2;p.frameTimer=0;}
-    if(p.winTimer>120){
+    const waitingPartner = isMultiplayer && !partnerGoaled;
+    if(p.winTimer<=120){
+      // 골인 후 2초간 우측으로 걷는 애니메이션
+      p.x+=2; p.winTimer++;
+      p.frameTimer++; if(p.frameTimer>8){p.frame=(p.frame+1)%2;p.frameTimer=0;}
+    } else if(waitingPartner){
+      // 파트너 대기 중: 제자리 idle 애니메이션 유지
+      p.frameTimer++; if(p.frameTimer>12){p.frame=(p.frame+1)%2;p.frameTimer=0;}
+    }
+    if(p.winTimer>120 && !waitingPartner){
+      // 솔로이거나 파트너도 골인 → 스테이지 클리어
       stopBGM(); sndWin();
       clearedStage=stageIdx;
       gameState='stageclear';
@@ -408,12 +416,14 @@ function update(){
       p.state='win'; p.winTimer=0; p.vx=2; p.vy=0;
       addFloat(FLAG_X,GND_Y-80,'🎉 클리어!','#ff0');
       score+=timeLeft*10;
+      notifyGoal();
     }
   } else {
     if(!boss.alive && p.x+p.w>=FLAG_X&&p.state!=='win'){
       p.state='win'; p.winTimer=0; p.vx=2; p.vy=0;
       addFloat(FLAG_X,GND_Y-80,'🏆 BOSS 처치!','#ff0');
       score+=timeLeft*10+5000;
+      notifyGoal();
     }
   }
 }

@@ -1777,6 +1777,26 @@ function draw(){
   drawHUD();
   if(boss&&boss.alive) drawBossHPBar();
 
+  // 협력 클리어 대기 메시지
+  if(typeof isMultiplayer!=='undefined' && isMultiplayer &&
+     typeof partnerGoaled!=='undefined' && !partnerGoaled &&
+     player && player.state==='win' && player.winTimer>120){
+    const pulse = 0.75 + Math.sin(Date.now()*0.004)*0.25;
+    ctx.save();
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(W/2-160, H/2-28, 320, 56);
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle = '#ffe033';
+    ctx.font = 'bold 18px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#000';
+    ctx.shadowBlur = 6;
+    ctx.fillText('파트너를 기다리는 중... 🏁', W/2, H/2);
+    ctx.restore();
+  }
+
   if(gameState==='title')      drawTitle();
   if(gameState==='stageclear') drawStageClear();
   if(gameState==='allclear')   drawAllClear();

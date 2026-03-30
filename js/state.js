@@ -90,6 +90,8 @@ function initLevel(){
   floatTexts=[]; particles=[]; powerups=[];
   fireballs=[]; screenFlash=null; stageFireworks=[];
   boss=null;
+  // 협력 클리어 상태 리셋 (스테이지마다 초기화)
+  if(typeof partnerGoaled !== 'undefined') partnerGoaled = false;
 
   const spawnX = (typeof isMultiplayer!=='undefined' && isMultiplayer && myPlayerNum===2) ? 120 : 80;
   player={

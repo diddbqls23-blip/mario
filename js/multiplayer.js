@@ -6,6 +6,7 @@ let isMultiplayer = false;
 let myPlayerNum   = 1;
 let remotePlayer  = null;
 let _lastSent     = 0;
+let partnerGoaled = false; // 협력 클리어: 파트너가 골에 도달했는지 여부
 
 // ── 소켓 초기화 ─────────────────────────────────────────────────
 function initSocket() {
@@ -27,9 +28,18 @@ function initSocket() {
     remotePlayer.h = data.h || (data.giant ? GIANT_H : (data.big ? BIG_H : SML_H));
   });
 
+  // 파트너가 골 지점 도달
+  socket.on('partner-goal', () => {
+    partnerGoaled = true;
+    if (player && typeof addFloat === 'function') {
+      addFloat(player.x + player.w / 2, player.y - 40, '파트너 골인! 빨리 와! 🏁', '#ffcc00');
+    }
+  });
+
   // 상대방 접속 끊김
   socket.on('player-disconnected', () => {
     remotePlayer = null;
+    partnerGoaled = true; // 연결 끊기면 대기 해제 (혼자 진행)
     if (player && typeof addFloat === 'function') {
       addFloat(player.x + player.w / 2, player.y - 30, '상대방 연결 끊김 😢', '#ff8888');
     }
@@ -71,6 +81,11 @@ function soloPlay() {
   myPlayerNum   = 1;
   hideLobby();
   startGame();
+}
+
+// ── 골 도달 알림 ────────────────────────────────────────────────
+function notifyGoal() {
+  if (socket && isMultiplayer) socket.emit('player-goal');
 }
 
 // ── 위치 전송 (게임 루프에서 호출) ─────────────────────────────

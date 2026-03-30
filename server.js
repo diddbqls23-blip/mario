@@ -48,6 +48,11 @@ io.on('connection', (socket) => {
     if (roomId) socket.to(roomId).emit('remote-player-update', data);
   });
 
+  socket.on('player-goal', () => {
+    const roomId = socket.data.roomId;
+    if (roomId) socket.to(roomId).emit('partner-goal');
+  });
+
   socket.on('disconnect', () => {
     const { roomId, playerNum } = socket.data || {};
     if (roomId) {
