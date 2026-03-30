@@ -27,6 +27,14 @@ function update(){
     return;
   }
   if(gameState==='title'||gameState==='gameover'||gameState==='win') return;
+  // 파트너 재접속 대기 중: 파티클/플로트만 업데이트, 게임 로직 동결
+  if(gameState==='paused'){
+    floatTexts.forEach(t=>{t.y+=t.vy;t.life--;});
+    floatTexts=floatTexts.filter(t=>t.life>0);
+    particles.forEach(pt=>{pt.x+=pt.vx;pt.y+=pt.vy;pt.vy+=pt.gravity;pt.vx*=0.96;pt.life--;});
+    particles=particles.filter(pt=>pt.life>0);
+    return;
+  }
   if(gameState==='shop'){
     // 상점 중 파티클/플로트만 업데이트 (게임 일시정지)
     floatTexts.forEach(t=>{t.y+=t.vy;t.life--;});

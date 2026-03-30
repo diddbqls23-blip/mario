@@ -1816,6 +1816,65 @@ function draw(){
   if(gameState==='allclear')   drawAllClear();
   if(gameState==='gameover')   drawGameOver();
   if(gameState==='shop')       drawShop();
+  if(gameState==='paused')     drawPausedOverlay();
 
   ctx.restore();
+}
+
+// ── 일시정지 오버레이 (파트너 재접속 대기) ───────────────────────
+function drawPausedOverlay(){
+  const elapsed  = (typeof _partnerDisconnectedAt!=='undefined' && _partnerDisconnectedAt>0)
+    ? Date.now() - _partnerDisconnectedAt : 0;
+  const remaining = Math.max(0, 30 - Math.floor(elapsed / 1000));
+  const pulse = 0.85 + Math.sin(Date.now() * 0.003) * 0.15;
+
+  // 반투명 어둠
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // 메인 패널
+  ctx.fillStyle = 'rgba(20,20,40,0.88)';
+  roundRect(ctx, W/2 - 190, H/2 - 55, 380, 110, 14);
+  ctx.fill();
+  ctx.strokeStyle = '#4488ff';
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = pulse;
+  roundRect(ctx, W/2 - 190, H/2 - 55, 380, 110, 14);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // 제목
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px Arial';
+  ctx.shadowColor = '#000'; ctx.shadowBlur = 6;
+  ctx.fillText('⏸  파트너 재접속 대기 중...', W/2, H/2 - 22);
+
+  // 카운트다운
+  const cc = remaining > 10 ? '#ffcc00' : '#ff4444';
+  ctx.fillStyle = cc;
+  ctx.font = 'bold 16px Arial';
+  ctx.globalAlpha = pulse;
+  ctx.fillText(
+    remaining > 0 ? `${remaining}초 안에 재접속하지 않으면 솔로 모드로 전환됩니다`
+                  : '재접속 대기 중...',
+    W/2, H/2 + 16
+  );
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+// ── 둥근 사각형 헬퍼 ───────────────────────────────────────────
+function roundRect(ctx2, x, y, w, h, r){
+  ctx2.beginPath();
+  ctx2.moveTo(x+r, y);
+  ctx2.lineTo(x+w-r, y); ctx2.arcTo(x+w, y, x+w, y+r, r);
+  ctx2.lineTo(x+w, y+h-r); ctx2.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx2.lineTo(x+r, y+h); ctx2.arcTo(x, y+h, x, y+h-r, r);
+  ctx2.lineTo(x, y+r); ctx2.arcTo(x, y, x+r, y, r);
+  ctx2.closePath();
 }
