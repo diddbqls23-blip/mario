@@ -931,6 +931,7 @@ function drawPlayer(){
 
   ctx.save();
 
+  const _isP2 = typeof myPlayerNum!=='undefined' && myPlayerNum===2;
   if(p.giant && p.giantTimer>0){
     const rc=['#ff8800','#ffd700','#ff4400'][Math.floor(Date.now()/100)%3];
     ctx.shadowColor=rc; ctx.shadowBlur=40;
@@ -938,13 +939,19 @@ function drawPlayer(){
     const flip=p.facing===-1;
     ctx.translate(sx+(flip?p.w:0), sy+p.h);
     ctx.scale(flip?-scale:scale, scale);
-    tkdBig(0,-BIG_H,p.state,p.frame);
+    if(_isP2) princessBig(0,-BIG_H,p.state,p.frame);
+    else      tkdBig(0,-BIG_H,p.state,p.frame);
   } else {
     if(p.facing===-1){ ctx.scale(-1,1); ctx.translate(-sx*2-p.w,0); }
     const bx=sx, by=sy;
     const big=p.big||(p.powerupAnim>0&&p.h===BIG_H);
-    if(big) tkdBig(bx,by,p.state,p.frame);
-    else    tkdSmall(bx,by,p.state,p.frame);
+    if(_isP2){
+      if(big) princessBig(bx,by,p.state,p.frame);
+      else    princessSmall(bx,by,p.state,p.frame);
+    } else {
+      if(big) tkdBig(bx,by,p.state,p.frame);
+      else    tkdSmall(bx,by,p.state,p.frame);
+    }
     if(!p.onGround&&p.jumpsLeft===0){
       ctx.globalAlpha=0.7+Math.sin(Date.now()*.008)*.3;
       ctx.font='bold 12px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -1019,9 +1026,16 @@ function drawRemotePlayer(){
 
   ctx.save();
   const big = p.big||p.giant;
+  // 상대방 캐릭터: 내가 P2면 상대는 P1(남자), 내가 P1이면 상대는 P2(공주)
+  const _remoteIsP1 = typeof myPlayerNum!=='undefined' && myPlayerNum===2;
   if(p.facing===-1){ ctx.scale(-1,1); ctx.translate(-sx*2-w,0); }
-  if(big) princessBig(sx,sy,p.state||'idle',p.frame||0);
-  else    princessSmall(sx,sy,p.state||'idle',p.frame||0);
+  if(_remoteIsP1){
+    if(big) tkdBig(sx,sy,p.state||'idle',p.frame||0);
+    else    tkdSmall(sx,sy,p.state||'idle',p.frame||0);
+  } else {
+    if(big) princessBig(sx,sy,p.state||'idle',p.frame||0);
+    else    princessSmall(sx,sy,p.state||'idle',p.frame||0);
+  }
   ctx.restore();
 
   if(p.starTimer>0) ctx.restore();
