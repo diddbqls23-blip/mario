@@ -1012,10 +1012,9 @@ function drawRemotePlayer(){
   }
   // 투명화
   if(p.invisibleTimer>0) ctx.globalAlpha=0.28;
-  // 무적 깜빡임
+  // 무적 깜빡임 (starTimer===0일 때만 도달 → ctx.save 없음, restore 호출 금지)
   if(p.invincible>0&&p.starTimer===0&&Math.floor(p.invincible/4)%2===0){
-    ctx.globalAlpha=0; ctx.globalAlpha=1; // 스킵
-    if(p.starTimer===0){ ctx.restore&&ctx.restore(); ctx.globalAlpha=1; return; }
+    ctx.globalAlpha=1; return;
   }
 
   ctx.save();

@@ -23,7 +23,8 @@ function initSocket() {
     if (!remotePlayer) remotePlayer = {};
     Object.assign(remotePlayer, data);
     remotePlayer.w = data.giant ? GIANT_W : 24;
-    remotePlayer.h = data.giant ? GIANT_H : (data.big ? BIG_H : SML_H);
+    // h를 직접 수신해 powerup 애니메이션 중 크기도 정확히 반영
+    remotePlayer.h = data.h || (data.giant ? GIANT_H : (data.big ? BIG_H : SML_H));
   });
 
   // 상대방 접속 끊김
@@ -86,6 +87,7 @@ function sendPlayerUpdate() {
     frame:   player.frame,
     big:     player.big,
     giant:   player.giant,
+    h:       player.h,
     giantTimer:      player.giantTimer,
     starTimer:       player.starTimer,
     invincible:      player.invincible,
