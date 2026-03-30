@@ -26,7 +26,12 @@ function initSocket() {
     remotePlayer.w = data.giant ? GIANT_W : 24;
     // h를 직접 수신해 powerup 애니메이션 중 크기도 정확히 반영
     remotePlayer.h = data.h || (data.giant ? GIANT_H : (data.big ? BIG_H : SML_H));
+    // 점수: 두 플레이어 중 높은 값을 공유 점수로 사용
+    if (typeof data.score === 'number') score = Math.max(score, data.score);
   });
+
+  // 코인/적/점수 동기화 이벤트 수신
+  socket.on('game-event', (ev) => { applyGameEvent(ev); });
 
   // 파트너가 골 지점 도달
   socket.on('partner-goal', () => {
@@ -88,6 +93,36 @@ function notifyGoal() {
   if (socket && isMultiplayer) socket.emit('player-goal');
 }
 
+// ── 게임 이벤트 전송 (update.js에서 호출) ──────────────────────
+// type: 'coin' | 'enemy'  /  idx: 배열 인덱스
+function emitGameEvent(type, idx) {
+  if (!socket || !isMultiplayer) return;
+  socket.emit('game-event', { type, idx });
+}
+
+// ── 수신한 게임 이벤트 적용 ──────────────────────────────────────
+function applyGameEvent(ev) {
+  switch (ev.type) {
+    case 'coin':
+      if (coins && coins[ev.idx] && coins[ev.idx].alive) {
+        const c = coins[ev.idx];
+        c.alive = false;
+        coinCount++;
+        spawnParticles(c.x, c.y, 6,
+          ['#ffe033','#ffcc00','#fff','#ffd700'],
+          {speed:2, upBias:2, life:18, r:3, shape:'star'});
+      }
+      break;
+    case 'enemy':
+      if (enemies && enemies[ev.idx] &&
+          enemies[ev.idx].alive && !enemies[ev.idx].squished) {
+        enemies[ev.idx].squished  = true;
+        enemies[ev.idx].squishTimer = 30;
+      }
+      break;
+  }
+}
+
 // ── 위치 전송 (게임 루프에서 호출) ─────────────────────────────
 function sendPlayerUpdate() {
   if (!socket || !isMultiplayer || !player) return;
@@ -103,6 +138,7 @@ function sendPlayerUpdate() {
     big:     player.big,
     giant:   player.giant,
     h:       player.h,
+    score:   score,          // 점수 공유
     giantTimer:      player.giantTimer,
     starTimer:       player.starTimer,
     invincible:      player.invincible,

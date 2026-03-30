@@ -255,7 +255,7 @@ function update(){
       return;
     }
     // 적 충돌
-    enemies.forEach(e=>{
+    enemies.forEach((e,_fei)=>{
       if(!e.alive||e.squished||!fb.alive) return;
       if(overlap(fb.x,fb.y,12,12,e.x,e.y,e.w,e.h)){
         fb.alive=false;
@@ -264,6 +264,7 @@ function update(){
         addFloat(e.x+e.w/2, e.y-20,'+150🔥','#ff6600'); sndFireballHit();
         spawnParticles(e.x+e.w/2, e.y, 18,
           ['#ff4400','#ff8800','#ffcc00','#fff'],{speed:5,upBias:3,life:35,r:5,shape:'star'});
+        emitGameEvent('enemy',_fei);
       }
     });
     // 보스 충돌
@@ -293,7 +294,7 @@ function update(){
   }
 
   // Enemies
-  enemies.forEach(e=>{
+  enemies.forEach((e,_ei)=>{
     if(!e.alive) return;
     if(e.squished){e.squishTimer--;if(e.squishTimer<=0)e.alive=false;return;}
     if(Math.abs(e.x-(camX+W/2))>W+100) return;
@@ -317,6 +318,7 @@ function update(){
           spawnParticles(e.x+e.w/2, e.y+e.h/2, 22,
             ['#8800ff','#bb00ff','#00ffff','#ffffff'],
             {speed:6, upBias:3, life:35, r:6, shape:'star'});
+          emitGameEvent('enemy',_ei);
           return;
         }
         const pull=Math.min(2.8, 45/dist);
@@ -377,6 +379,7 @@ function update(){
         addFloat(e.x+e.w/2,e.y-20,tag,'#ff8800'); sndStomp();
         spawnParticles(e.x+e.w/2, e.y, 12, clr,
           {speed:4, upBias:2, life:30, r:4});
+        emitGameEvent('enemy',_ei);
       } else if(p.vy>0&&p.y+p.h<e.y+14){
         e.squished=true; e.squishTimer=30;
         p.vy=-8; p.jumpsLeft=2; p.lastJumpWas2nd=false;
@@ -388,6 +391,7 @@ function update(){
           : e.type==='ufo'     ? ['#4488ff','#88ccff','#fff','#aaddff']
           : ['#c0c0c4','#888888','#fff','#cccccc'];
         spawnParticles(e.x+e.w/2, e.y, 14, clr, {speed:5, upBias:3, life:35, r:5});
+        emitGameEvent('enemy',_ei);
       } else {
         takeDamage();
       }
@@ -395,7 +399,7 @@ function update(){
   });
 
   // Coins
-  coins.forEach(c=>{
+  coins.forEach((c,_ci)=>{
     if(!c.alive) return;
     c.frameTimer++; if(c.frameTimer>8){c.frame=(c.frame+1)%4;c.frameTimer=0;}
     if(overlap(p.x,p.y,p.w,p.h,c.x-8,c.y-8,c.w,c.h)){
@@ -404,6 +408,7 @@ function update(){
       spawnParticles(c.x, c.y, 12, ['#ffe033','#ffcc00','#fff','#ffd700','#ffee88'],
         {speed:4, upBias:3, life:35, r:5, shape:'star'});
       triggerScreenFlash('#ffdd00',0.12,0.08);
+      emitGameEvent('coin',_ci);
     }
   });
 

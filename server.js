@@ -53,6 +53,12 @@ io.on('connection', (socket) => {
     if (roomId) socket.to(roomId).emit('partner-goal');
   });
 
+  // 코인/적/점수 상태 동기화 릴레이
+  socket.on('game-event', (data) => {
+    const roomId = socket.data.roomId;
+    if (roomId) socket.to(roomId).emit('game-event', data);
+  });
+
   socket.on('disconnect', () => {
     const { roomId, playerNum } = socket.data || {};
     if (roomId) {
