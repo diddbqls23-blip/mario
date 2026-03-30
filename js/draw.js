@@ -1347,6 +1347,13 @@ function drawHUD(){
   ctx.font='11px Arial'; ctx.textAlign='center';
   ctx.fillText(`STAGE ${stageIdx+1} / ${STAGES.length}`, W/2, H-14);
 
+  // 핑 표시 (멀티플레이어)
+  if(typeof isMultiplayer!=='undefined'&&isMultiplayer&&typeof _pingMs!=='undefined'&&_pingMs>0){
+    const pc=_pingMs<80?'#22bb22':_pingMs<150?'#ffaa00':'#ff4444';
+    ctx.fillStyle=pc; ctx.textAlign='left';
+    ctx.fillText(`📶 ${_pingMs}ms`, 8, H-14);
+  }
+
   if(player&&gameState==='playing'){
     const p=player;
     let barY=42;
@@ -1569,7 +1576,7 @@ function drawTitle(){
 
 function drawStageClear(){
   ctx.fillStyle='rgba(150,220,150,0.25)'; ctx.fillRect(0,0,W,H);
-  const px=W/2-230, py=H/2-140, pw=460, ph=280;
+  const px=W/2-240, py=H/2-160, pw=480, ph=320;
   const panelGrd=ctx.createLinearGradient(px,py,px,py+ph);
   panelGrd.addColorStop(0,'rgba(230,255,230,0.97)');
   panelGrd.addColorStop(1,'rgba(200,245,205,0.97)');
@@ -1578,28 +1585,54 @@ function drawStageClear(){
   ctx.strokeStyle='#22aa22'; ctx.lineWidth=2.5; ctx.stroke();
 
   ctx.shadowColor='#44cc44'; ctx.shadowBlur=10;
-  ctx.fillStyle='#225500'; ctx.font='bold 42px Arial';
+  ctx.fillStyle='#225500'; ctx.font='bold 40px Arial';
   ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(`🎉 STAGE ${clearedStage+1} 클리어!`,W/2,H/2-88);
+  ctx.fillText(`🎉 STAGE ${clearedStage+1} 클리어!`,W/2,H/2-105);
   ctx.shadowBlur=0;
 
-  ctx.fillStyle='#1a1a1a'; ctx.font='bold 22px Arial';
-  ctx.fillText(`점수: ${String(score).padStart(6,'0')}점  코인: ${coinCount}개`,W/2,H/2-40);
+  // ── 이번 스테이지 결과 ─────────────────────────────────────
+  const stageScoreEarned = score - (typeof stageStartScore!=='undefined'?stageStartScore:0);
+  const stageCoinsEarned = coinCount - (typeof stageStartCoins!=='undefined'?stageStartCoins:0);
+  const stageSecs        = Math.floor((Date.now()-(typeof stageStartTime!=='undefined'?stageStartTime:Date.now()))/1000);
+  const timeBonusPts     = timeLeft*10;
+
+  // 구분선
+  ctx.strokeStyle='rgba(0,100,0,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(px+20,H/2-70); ctx.lineTo(px+pw-20,H/2-70); ctx.stroke();
+
+  ctx.font='bold 15px Arial'; ctx.textAlign='left';
+  const col1=px+36, col2=px+pw/2+12, rowH=26, rowY=H/2-55;
+
+  const rows=[
+    ['🏆 획득 점수',  `+${stageScoreEarned}pt`,'#664400'],
+    ['🪙 획득 코인',  `+${stageCoinsEarned}개`, '#886600'],
+    ['⏱ 클리어 시간', `${stageSecs}초`,         '#005577'],
+    ['🎁 시간 보너스',`+${timeBonusPts}pt`,     '#553300'],
+  ];
+  rows.forEach(([label,val,vc],i)=>{
+    const row = i<2 ? rowY+i*rowH : rowY+(i*rowH);
+    ctx.fillStyle='#334433'; ctx.fillText(label, col1+(i%2===1?pw/2-32:0), row);
+    ctx.fillStyle=vc;        ctx.textAlign='right';
+    ctx.fillText(val, (i%2===1?px+pw-20:col2-12), row);
+    ctx.textAlign='left';
+  });
+
+  // 총 점수
+  ctx.strokeStyle='rgba(0,100,0,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(px+20,H/2+50); ctx.lineTo(px+pw-20,H/2+50); ctx.stroke();
+  ctx.fillStyle='#1a1a1a'; ctx.font='bold 18px monospace'; ctx.textAlign='center';
+  ctx.fillText(`총 점수  ${String(score).padStart(6,'0')}pt  /  코인 ${coinCount}개`,W/2,H/2+66);
 
   if(clearedStage+1<STAGES.length){
     const nextTheme=['평원','사막','성(보스)','지하던전','화산','우주'][clearedStage+1]||'';
-    ctx.fillStyle='#005577'; ctx.font='16px Arial';
-    ctx.fillText(`다음 → STAGE ${clearedStage+2}: ${nextTheme}`,W/2,H/2+0);
+    ctx.fillStyle='#005577'; ctx.font='14px Arial';
+    ctx.fillText(`다음 → STAGE ${clearedStage+2}: ${nextTheme}`,W/2,H/2+90);
   }
-
-  // 시간 보너스
-  ctx.fillStyle='#664400'; ctx.font='15px Arial';
-  ctx.fillText(`⏱ 시간 보너스: ${timeLeft} × 10 = +${timeLeft*10}pt`,W/2,H/2+30);
 
   if(Math.floor(Date.now()/500)%2===0){
     ctx.shadowColor='#22aa22'; ctx.shadowBlur=6;
-    ctx.fillStyle='#115500'; ctx.font='bold 20px Arial';
-    ctx.fillText('Space 를 눌러 계속',W/2,H/2+80);
+    ctx.fillStyle='#115500'; ctx.font='bold 18px Arial';
+    ctx.fillText('Space 를 눌러 계속',W/2,H/2+118);
     ctx.shadowBlur=0;
   }
 }
@@ -1817,6 +1850,40 @@ function draw(){
   if(gameState==='gameover')   drawGameOver();
   if(gameState==='shop')       drawShop();
   if(gameState==='paused')     drawPausedOverlay();
+  if(gameState==='countdown')  drawCountdown();
+
+  ctx.restore();
+}
+
+// ── 카운트다운 오버레이 (3, 2, 1, GO!) ───────────────────────────
+function drawCountdown(){
+  const elapsed = Date.now() - _countdownStartTime;
+  let label, color;
+  if(elapsed < 1000)      { label = '3'; color = '#ff4444'; }
+  else if(elapsed < 2000) { label = '2'; color = '#ffaa00'; }
+  else if(elapsed < 3000) { label = '1'; color = '#44cc44'; }
+  else                    { label = 'GO!'; color = '#00ccff'; }
+
+  // 펄스 애니메이션: 매 초 시작 시 크게 나타났다가 작아짐
+  const phase = (elapsed % 1000) / 1000;
+  const scale = 1.4 - phase * 0.4;
+
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, (1 - phase) * 2);
+  ctx.translate(W / 2, H / 2);
+  ctx.scale(scale, scale);
+
+  // 그림자
+  ctx.font = 'bold 120px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowBlur = 20;
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = '#000';
+  ctx.strokeText(label, 0, 0);
+  ctx.fillStyle = color;
+  ctx.fillText(label, 0, 0);
 
   ctx.restore();
 }

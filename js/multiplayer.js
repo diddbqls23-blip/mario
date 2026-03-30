@@ -11,7 +11,14 @@ let _hostStateLast       = 0;
 let _evCounter           = 0;     // 이벤트 ID 생성 카운터
 let _bossHitSeq          = 0;     // 보스 피격 순번 (스테이지마다 리셋)
 let partnerGoaled        = false; // 협력 클리어: 파트너 골인 여부
-let _partnerDisconnectedAt = 0;   // 파트너 접속 끊긴 시각 (draw.js에서 카운트다운에 사용)
+let _partnerDisconnectedAt = 0;   // 파트너 접속 끊긴 시각
+
+// ── 핑 측정 ─────────────────────────────────────────────────────
+let _pingMs   = 0;
+let _pingLast = 0;
+
+// ── 델타 동기화: 마지막 전송값 캐시 ─────────────────────────────
+let _lastSentState = {};
 
 // ── 소켓 초기화 ─────────────────────────────────────────────────
 function initSocket() {
@@ -52,11 +59,11 @@ function initSocket() {
     }
   });
 
-  // ── P2가 방에 입장 (P1에게 알림) ───────────────────────────
-  socket.on('p2-joined', () => {
-    document.getElementById('mp-waiting').style.display = 'none';
-    document.getElementById('mp-p2ready').style.display = 'block';
-    setTimeout(() => { hideLobby(); startGame(); }, 700);
+  // ── 게임 카운트다운 시작 (P1·P2 동시 수신) ─────────────────
+  socket.on('start-countdown', () => {
+    hideLobby();
+    if (typeof startCountdown === 'function') startCountdown();
+    else if (typeof startGame === 'function') startGame();
   });
 
   // ── 상대방 위치/상태 수신 (~30fps) ─────────────────────────
@@ -144,6 +151,16 @@ function initSocket() {
       addFloat(player.x + player.w / 2, player.y - 40, '파트너 게임 오버 — 혼자 계속! 🎮', '#ffaa44');
     }
   });
+
+  // ── 방 만료 (10분 경과) ────────────────────────────────────
+  socket.on('room-expired', () => {
+    isMultiplayer = false;
+    myRoomId      = null;
+    remotePlayer  = null;
+    if (typeof addFloat === 'function' && player) {
+      addFloat(player.x + player.w / 2, player.y - 40, '방이 만료되었습니다 (10분 경과)', '#ff8888');
+    }
+  });
 }
 
 // ── 방 만들기 ───────────────────────────────────────────────────
@@ -172,8 +189,7 @@ function joinRoom() {
     myPlayerNum   = 2;
     myRoomId      = res.roomId;
     isMultiplayer = true;
-    hideLobby();
-    startGame();
+    // hideLobby / startCountdown은 'start-countdown' 이벤트가 처리
   });
 }
 
@@ -244,28 +260,54 @@ function sendHostState() {
   });
 }
 
-// ── 위치 전송 (~30fps) ─────────────────────────────────────────
+// ── 위치 전송 — 델타 동기화 (~30fps) ──────────────────────────
+// 변경된 필드만 전송. x/y/vx/vy는 항상 포함 (위치 보간에 필요).
 function sendPlayerUpdate() {
   if (!socket || !isMultiplayer || !player) return;
   const now = Date.now();
   if (now - _lastSent < 33) return;
   _lastSent = now;
-  socket.emit('player-update', {
-    x: player.x, y: player.y,
-    vx: player.vx, vy: player.vy,
-    facing:          player.facing,
-    state:           player.state,
-    frame:           player.frame,
-    big:             player.big,
-    giant:           player.giant,
-    h:               player.h,
+
+  const full = {
+    x: player.x,            y: player.y,
+    vx: player.vx,          vy: player.vy,
+    facing:         player.facing,
+    state:          player.state,
+    frame:          player.frame,
+    big:            player.big,
+    giant:          player.giant,
+    h:              player.h,
     score,
-    giantTimer:      player.giantTimer,
-    starTimer:       player.starTimer,
-    invincible:      player.invincible,
-    fireTimer:       player.fireTimer,
-    invisibleTimer:  player.invisibleTimer,
-    blackholeTimer:  player.blackholeTimer,
+    giantTimer:     player.giantTimer,
+    starTimer:      player.starTimer,
+    invincible:     player.invincible,
+    fireTimer:      player.fireTimer,
+    invisibleTimer: player.invisibleTimer,
+    blackholeTimer: player.blackholeTimer,
+  };
+
+  // 위치/속도는 항상 포함; 나머지는 변경된 것만 포함
+  const delta = { x: full.x, y: full.y, vx: full.vx, vy: full.vy };
+  const alwaysSend = new Set(['x','y','vx','vy']);
+  for (const key in full) {
+    if (!alwaysSend.has(key) && full[key] !== _lastSentState[key]) {
+      delta[key] = full[key];
+    }
+  }
+  Object.assign(_lastSentState, full);
+
+  socket.emit('player-update', delta);
+}
+
+// ── 핑 측정 (5초마다, main loop에서 호출) ──────────────────────
+function maybePing() {
+  if (!socket || !isMultiplayer) return;
+  const now = Date.now();
+  if (now - _pingLast < 5000) return;
+  _pingLast = now;
+  const sent = now;
+  socket.emit('ping-check', sent, (ts) => {
+    if (typeof ts === 'number') _pingMs = Date.now() - ts;
   });
 }
 

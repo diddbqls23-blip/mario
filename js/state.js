@@ -5,6 +5,10 @@ let gameState = 'title';
 let stageIdx  = 0;
 let clearedStage = 0;
 let score = 0, lives = 3, coinCount = 0, timeLeft = 300, timeTimer = 0, camX = 0;
+// 스테이지별 시작 통계 (결과 화면에서 이번 스테이지 획득량 계산용)
+let stageStartScore = 0;
+let stageStartCoins = 0;
+let stageStartTime  = 0;
 let floatTexts = [];
 let particles  = [];
 let player, enemies, coins, qblocks, powerups;
@@ -87,6 +91,7 @@ function initLevel(){
   platforms.forEach(pl=>{ if(pl.type==='brick') pl.hit=false; });
 
   camX=0; timeLeft=300+(stageIdx*10); timeTimer=0;
+  stageStartScore=score; stageStartCoins=coinCount; stageStartTime=Date.now();
   floatTexts=[]; particles=[]; powerups=[];
   fireballs=[]; screenFlash=null; stageFireworks=[];
   boss=null;

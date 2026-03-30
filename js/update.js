@@ -27,6 +27,12 @@ function update(){
     return;
   }
   if(gameState==='title'||gameState==='gameover'||gameState==='win') return;
+  // 3,2,1 카운트다운 중: 게임 로직 동결, 카운트 0이 되면 플레이 시작
+  if(gameState==='countdown'){
+    const elapsed=Date.now()-_countdownStartTime;
+    if(elapsed>=4000){ gameState='playing'; if(typeof startBGM==='function') startBGM(1+stageIdx*0.05); }
+    return;
+  }
   // 파트너 재접속 대기 중: 파티클/플로트만 업데이트, 게임 로직 동결
   if(gameState==='paused'){
     floatTexts.forEach(t=>{t.y+=t.vy;t.life--;});
