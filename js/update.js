@@ -56,7 +56,11 @@ function update(){
     player.vy+=curGrav*0.5; player.y+=player.vy;
     if(player.deadTimer<=0){
       lives--;
-      if(lives<=0){ gameState='gameover'; stopBGM(); sndGameOver(); return; }
+      if(lives<=0){
+        gameState='gameover'; stopBGM(); sndGameOver();
+        if(typeof emitPlayerGameOver==='function') emitPlayerGameOver();
+        return;
+      }
       initLevel(); gameState='playing'; startBGM(1+stageIdx*0.05);
     }
     return;
@@ -278,7 +282,7 @@ function update(){
         addFloat(e.x+e.w/2, e.y-20,'+150🔥','#ff6600'); sndFireballHit();
         spawnParticles(e.x+e.w/2, e.y, 18,
           ['#ff4400','#ff8800','#ffcc00','#fff'],{speed:5,upBias:3,life:35,r:5,shape:'star'});
-        emitGameEvent('enemy',_fei);
+        emitGameEvent('enemy',_fei,{squishTimer:25});
       }
     });
     // 보스 충돌
@@ -332,7 +336,7 @@ function update(){
           spawnParticles(e.x+e.w/2, e.y+e.h/2, 22,
             ['#8800ff','#bb00ff','#00ffff','#ffffff'],
             {speed:6, upBias:3, life:35, r:6, shape:'star'});
-          emitGameEvent('enemy',_ei);
+          emitGameEvent('enemy',_ei,{instant:true});
           return;
         }
         const pull=Math.min(2.8, 45/dist);
@@ -558,5 +562,7 @@ function killPlayer(){
   player.state='dead'; player.vx=0; player.vy=-12;
   player.deadTimer=90; gameState='dead';
   stopBGM(); sndDead();
+  // 멀티플레이어: 파트너에게 사망/레벨 리셋 알림
+  if(typeof emitPlayerDied==='function') emitPlayerDied();
   setTimeout(()=>{ if(gameState==='dead') startBGM(1+stageIdx*0.05); }, 1500);
 }

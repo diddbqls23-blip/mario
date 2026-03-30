@@ -49,6 +49,29 @@ function initSocket() {
       addFloat(player.x + player.w / 2, player.y - 30, '상대방 연결 끊김 😢', '#ff8888');
     }
   });
+
+  // 파트너 사망 → 우리도 같은 스테이지로 즉시 리셋
+  socket.on('partner-died', (data) => {
+    if (typeof addFloat === 'function' && player) {
+      addFloat(player.x + player.w / 2, player.y - 40, '파트너가 죽었습니다! 리셋! 💀', '#ff6666');
+    }
+    // 파트너의 stageIdx로 맞춤 (diverge 방지)
+    if (typeof data === 'object' && typeof data.stageIdx === 'number') {
+      stageIdx = data.stageIdx;
+    }
+    if (typeof initLevel === 'function') initLevel();
+    gameState = 'playing';
+    if (typeof startBGM === 'function') startBGM(1 + stageIdx * 0.05);
+  });
+
+  // 파트너 게임 오버 → 솔로 모드로 전환해 계속 진행
+  socket.on('partner-gameover', () => {
+    remotePlayer = null;
+    partnerGoaled = true;
+    if (typeof addFloat === 'function' && player) {
+      addFloat(player.x + player.w / 2, player.y - 40, '파트너 게임 오버 — 혼자 계속! 🎮', '#ffaa44');
+    }
+  });
 }
 
 // ── 방 만들기 ───────────────────────────────────────────────────
@@ -94,10 +117,22 @@ function notifyGoal() {
 }
 
 // ── 게임 이벤트 전송 (update.js에서 호출) ──────────────────────
-// type: 'coin' | 'enemy'  /  idx: 배열 인덱스
-function emitGameEvent(type, idx) {
+// type: 'coin' | 'enemy'  /  idx: 배열 인덱스  /  extra: 추가 필드
+function emitGameEvent(type, idx, extra) {
   if (!socket || !isMultiplayer) return;
-  socket.emit('game-event', { type, idx });
+  socket.emit('game-event', Object.assign({ type, idx }, extra || {}));
+}
+
+// ── 사망 알림 (update.js killPlayer에서 호출) ───────────────────
+function emitPlayerDied() {
+  if (!socket || !isMultiplayer) return;
+  socket.emit('player-died', { stageIdx });
+}
+
+// ── 게임 오버 알림 (update.js에서 호출) ─────────────────────────
+function emitPlayerGameOver() {
+  if (!socket || !isMultiplayer) return;
+  socket.emit('player-gameover');
 }
 
 // ── 수신한 게임 이벤트 적용 ──────────────────────────────────────
@@ -114,10 +149,15 @@ function applyGameEvent(ev) {
       }
       break;
     case 'enemy':
-      if (enemies && enemies[ev.idx] &&
-          enemies[ev.idx].alive && !enemies[ev.idx].squished) {
-        enemies[ev.idx].squished  = true;
-        enemies[ev.idx].squishTimer = 30;
+      if (enemies && enemies[ev.idx] && enemies[ev.idx].alive) {
+        const en = enemies[ev.idx];
+        if (ev.instant) {
+          // 블랙홀 흡수 등 즉사 처리
+          en.alive = false;
+        } else {
+          en.squished    = true;
+          en.squishTimer = ev.squishTimer || 30;
+        }
       }
       break;
   }

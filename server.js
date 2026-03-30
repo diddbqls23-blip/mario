@@ -59,6 +59,18 @@ io.on('connection', (socket) => {
     if (roomId) socket.to(roomId).emit('game-event', data);
   });
 
+  // 플레이어 사망 → 상대방에게 레벨 리셋 알림
+  socket.on('player-died', (data) => {
+    const roomId = socket.data.roomId;
+    if (roomId) socket.to(roomId).emit('partner-died', data);
+  });
+
+  // 플레이어 게임 오버 → 상대방은 솔로 진행
+  socket.on('player-gameover', () => {
+    const roomId = socket.data.roomId;
+    if (roomId) socket.to(roomId).emit('partner-gameover');
+  });
+
   socket.on('disconnect', () => {
     const { roomId, playerNum } = socket.data || {};
     if (roomId) {
