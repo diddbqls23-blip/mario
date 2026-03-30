@@ -161,10 +161,15 @@ function update(){
   const shopSpeedMult = (p.speedBoostTimer > 0) ? 1.5 : 1.0;
   const curSpd = (shift ? RUN_SPD : SPD) * abilitySpeedMult * shopSpeedMult;
   const accel  = (shift ? 0.9 : 0.6) * abilitySpeedMult;
+  // 협력 카메라: 화면 오른쪽 끝 근접 시 우측 이동만 감속 (이전 프레임 camX 기준)
+  const _rtLim = (typeof isMultiplayer!=='undefined'&&isMultiplayer&&remotePlayer&&typeof remotePlayer.x==='number')
+    ? camX+W-48 : Infinity;
+  const _distLim = _rtLim-(p.x+p.w);
+  const _camSpd = _distLim>=120 ? curSpd : (_distLim<=0 ? 0 : curSpd*_distLim/120);
   p.running = shift && (left||right) && p.onGround;
 
   if(left) {p.vx=Math.max(p.vx-accel,-curSpd);p.facing=-1;}
-  if(right){p.vx=Math.min(p.vx+accel, curSpd);p.facing= 1;}
+  if(right){p.vx=Math.min(p.vx+accel, _camSpd);p.facing= 1;}
   if(!left&&!right){p.vx*=0.78;if(Math.abs(p.vx)<0.2)p.vx=0;}
 
   if(p.jumpCooldown>0) p.jumpCooldown--;
@@ -178,6 +183,8 @@ function update(){
   p.x+=p.vx; p.x=Math.max(0,Math.min(p.x,LEVEL_W-p.w));
   p.y+=p.vy;
   resolvePlayer(p);
+  // 협력 카메라: 화면 오른쪽 경계 초과 강제 보정
+  if(p.x+p.w>_rtLim){ p.x=_rtLim-p.w; if(p.vx>0) p.vx=0; }
 
   if(p.y>H+80) killPlayer();
   // 실드 능력 중엔 invincible 유지
@@ -201,7 +208,14 @@ function update(){
     } else { p.dustTimer=0; }
   } else { p.state='jump'; p.dustTimer=0; }
 
-  camX=Math.min(Math.max(p.x-W/3,0),LEVEL_W-W);
+  // 협력 카메라: 뒤처진 플레이어 기준, 부드러운 보간
+  if(typeof isMultiplayer!=='undefined'&&isMultiplayer&&remotePlayer&&typeof remotePlayer.x==='number'){
+    const laggingX=Math.min(p.x, remotePlayer.x);
+    const targetCam=Math.min(Math.max(laggingX-80,0),LEVEL_W-W);
+    camX=Math.round(camX+(targetCam-camX)*0.15);
+  } else {
+    camX=Math.min(Math.max(p.x-W/3,0),LEVEL_W-W);
+  }
   qblocks.forEach(q=>{if(q.bounceY<0){q.bounceY+=2;if(q.bounceY>0)q.bounceY=0;}});
 
   // Power-ups
