@@ -238,7 +238,9 @@ function update(){
     if(pw.type==='blackhole'&&pw.onGround) pw.vy=-5;
     if(pw.y>H+50){ pw.alive=false; return; }
     if(pw.x<0||pw.x>LEVEL_W) { pw.vx*=-1; }
+    // 내 캐릭터가 파워업 수집
     if(overlap(p.x,p.y,p.w,p.h,pw.x,pw.y,pw.w,pw.h)){
+      emitGameEvent('powerup-removed',-1,{pwx:pw.x,pwy:pw.y});
       pw.alive=false;
       if(pw.type==='mushroom') collectMushroom();
       else if(pw.type==='star')  collectStar();
@@ -247,6 +249,15 @@ function update(){
       else if(pw.type==='lightning') collectLightning();
       else if(pw.type==='invisible') collectInvisible();
       else if(pw.type==='blackhole') collectBlackhole();
+    }
+    // P1 호스트: 상대방(P2)이 파워업 수집 감지
+    if(pw.alive && typeof isMultiplayer!=='undefined'&&isMultiplayer&&myPlayerNum===1&&remotePlayer&&typeof remotePlayer.x==='number'){
+      const _rw=remotePlayer.w||24, _rh=remotePlayer.h||SML_H;
+      if(overlap(remotePlayer.x,remotePlayer.y,_rw,_rh,pw.x,pw.y,pw.w,pw.h)){
+        emitGameEvent('powerup-removed',-1,{pwx:pw.x,pwy:pw.y});
+        emitGameEvent('p2-powerup',-1,{effect:pw.type});
+        pw.alive=false; sndPowerup();
+      }
     }
   });
   powerups=powerups.filter(pw=>pw.alive||pw.emerging);
@@ -414,6 +425,26 @@ function update(){
         takeDamage();
       }
     }
+    // ── P1 호스트: 상대방(P2)의 적 충돌 처리 ──────────────────────
+    if(e.alive&&!e.squished&&typeof isMultiplayer!=='undefined'&&isMultiplayer&&myPlayerNum===1&&remotePlayer&&typeof remotePlayer.x==='number'){
+      const _rw=remotePlayer.w||24, _rh=remotePlayer.h||SML_H;
+      if(overlap(remotePlayer.x,remotePlayer.y,_rw,_rh,e.x,e.y,e.w,e.h)){
+        const _rpvy=remotePlayer.vy||0;
+        if(remotePlayer.starTimer>0||remotePlayer.giantTimer>0){
+          e.squished=true; e.squishTimer=20;
+          score+=200;
+          addFloat(e.x+e.w/2,e.y-20,'+200⭐[2P]','#ff8800');
+          spawnParticles(e.x+e.w/2,e.y,12,['#ff8800','#ffd700','#fff'],{speed:4,upBias:2,life:30,r:4});
+          emitGameEvent('enemy',_ei);
+        } else if(_rpvy>0&&remotePlayer.y+_rh<e.y+14){
+          e.squished=true; e.squishTimer=30;
+          score+=100;
+          addFloat(e.x+e.w/2,e.y-20,'+100[2P]','#0f0');
+          spawnParticles(e.x+e.w/2,e.y,14,['#c0c0c4','#888888','#fff'],{speed:5,upBias:3,life:35,r:5});
+          emitGameEvent('enemy',_ei);
+        }
+      }
+    }
   });
 
   // Coins
@@ -429,6 +460,19 @@ function update(){
       emitGameEvent('coin',_ci);
     }
   });
+  // P1 호스트: 상대방(P2)의 코인 충돌 처리
+  if(typeof isMultiplayer!=='undefined'&&isMultiplayer&&myPlayerNum===1&&remotePlayer&&typeof remotePlayer.x==='number'){
+    const _rw2=remotePlayer.w||24, _rh2=remotePlayer.h||SML_H;
+    coins.forEach((c,_ci2)=>{
+      if(!c.alive) return;
+      if(overlap(remotePlayer.x,remotePlayer.y,_rw2,_rh2,c.x-8,c.y-8,c.w,c.h)){
+        c.alive=false; coinCount++; score+=50;
+        addFloat(c.x,c.y-10,'+50[2P]','#ffe033'); sndCoin();
+        spawnParticles(c.x,c.y,12,['#ffe033','#ffcc00','#fff','#ffd700','#ffee88'],{speed:4,upBias:3,life:35,r:5,shape:'star'});
+        emitGameEvent('coin',_ci2);
+      }
+    });
+  }
 
   // 보스 업데이트
   if(boss && boss.alive) updateBoss();
@@ -474,48 +518,54 @@ function updateBoss(){
   if(overlap(p.x,p.y,p.w,p.h,b.x,b.y,b.w,b.h)){
     if(b.hurtTimer===0 && p.giantTimer>0){
       // 대왕: 접촉만으로 보스 피격
-      b.hp--;
-      b.hurtTimer=60;
+      b.hp--; b.hurtTimer=60;
+      emitGameEvent('boss-hit',0,{hp:b.hp});
       sndStomp();
       spawnParticles(b.x+b.w/2, b.y+b.h/2, 20,
-        ['#ff4444','#ff8800','#ffff00','#ff00ff','#fff'],
-        {speed:6, upBias:3, life:45, r:6});
+        ['#ff4444','#ff8800','#ffff00','#ff00ff','#fff'],{speed:6,upBias:3,life:45,r:6});
       addFloat(b.x+b.w/2, b.y-20, `💥 HP:${b.hp}`, '#ff8800');
       if(b.hp<=0){
-        b.alive=false;
-        score+=5000;
+        b.alive=false; score+=5000;
+        emitGameEvent('boss-dead',0,{});
         addFloat(b.x+b.w/2, b.y-40,'👑 +5000','#ffd700');
-        for(let i=0;i<5;i++){
-          setTimeout(()=>spawnParticles(
-            b.x+Math.random()*b.w, b.y+Math.random()*b.h, 15,
-            ['#ff4444','#ff8800','#ffff00','#ff00ff','#fff','#00ffff'],
-            {speed:7, upBias:4, life:50, r:7, shape:'star'}
-          ), i*120);
-        }
+        for(let i=0;i<5;i++) setTimeout(()=>spawnParticles(b.x+Math.random()*b.w,b.y+Math.random()*b.h,15,['#ff4444','#ff8800','#ffff00','#ff00ff','#fff','#00ffff'],{speed:7,upBias:4,life:50,r:7,shape:'star'}),i*120);
       }
     } else if(b.hurtTimer===0 && p.vy>0 && p.y+p.h<b.y+20){
-      b.hp--;
-      b.hurtTimer=60;
+      b.hp--; b.hurtTimer=60;
       p.vy=-10; p.jumpsLeft=2;
+      emitGameEvent('boss-hit',0,{hp:b.hp});
       sndStomp();
       spawnParticles(b.x+b.w/2, b.y+b.h/2, 20,
-        ['#ff4444','#ff8800','#ffff00','#ff00ff','#fff'],
-        {speed:6, upBias:3, life:45, r:6});
+        ['#ff4444','#ff8800','#ffff00','#ff00ff','#fff'],{speed:6,upBias:3,life:45,r:6});
       addFloat(b.x+b.w/2, b.y-20, `💥 HP:${b.hp}`, '#ff0');
       if(b.hp<=0){
-        b.alive=false;
-        score+=5000;
+        b.alive=false; score+=5000;
+        emitGameEvent('boss-dead',0,{});
         addFloat(b.x+b.w/2, b.y-40,'👑 +5000','#ffd700');
-        for(let i=0;i<5;i++){
-          setTimeout(()=>spawnParticles(
-            b.x+Math.random()*b.w, b.y+Math.random()*b.h, 15,
-            ['#ff4444','#ff8800','#ffff00','#ff00ff','#fff','#00ffff'],
-            {speed:7, upBias:4, life:50, r:7, shape:'star'}
-          ), i*120);
-        }
+        for(let i=0;i<5;i++) setTimeout(()=>spawnParticles(b.x+Math.random()*b.w,b.y+Math.random()*b.h,15,['#ff4444','#ff8800','#ffff00','#ff00ff','#fff','#00ffff'],{speed:7,upBias:4,life:50,r:7,shape:'star'}),i*120);
       }
     } else if(b.hurtTimer===0){
       takeDamage();
+    }
+  }
+  // ── P1 호스트: 상대방(P2)의 보스 충돌 처리 ──────────────────────
+  if(typeof isMultiplayer!=='undefined'&&isMultiplayer&&myPlayerNum===1&&remotePlayer&&typeof remotePlayer.x==='number'&&b.alive&&b.hurtTimer===0){
+    const _rw3=remotePlayer.w||24, _rh3=remotePlayer.h||SML_H;
+    if(overlap(remotePlayer.x,remotePlayer.y,_rw3,_rh3,b.x,b.y,b.w,b.h)){
+      const _rpvy3=remotePlayer.vy||0;
+      if(remotePlayer.giantTimer>0||(remotePlayer.starTimer>0)||(_rpvy3>0&&remotePlayer.y+_rh3<b.y+20)){
+        b.hp--; b.hurtTimer=60;
+        emitGameEvent('boss-hit',0,{hp:b.hp});
+        sndStomp();
+        spawnParticles(b.x+b.w/2,b.y+b.h/2,20,['#ff4444','#ff8800','#ffff00','#ff00ff','#fff'],{speed:6,upBias:3,life:45,r:6});
+        addFloat(b.x+b.w/2,b.y-20,`💥 HP:${b.hp} [2P]`,'#ff0');
+        if(b.hp<=0){
+          b.alive=false; score+=5000;
+          emitGameEvent('boss-dead',0,{});
+          addFloat(b.x+b.w/2,b.y-40,'👑 +5000','#ffd700');
+          for(let i=0;i<5;i++) setTimeout(()=>spawnParticles(b.x+Math.random()*b.w,b.y+Math.random()*b.h,15,['#ff4444','#ff8800','#ffff00','#ff00ff','#fff','#00ffff'],{speed:7,upBias:4,life:50,r:7,shape:'star'}),i*120);
+        }
+      }
     }
   }
 }

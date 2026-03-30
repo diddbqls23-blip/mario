@@ -8,7 +8,8 @@ function startGame() {
 
 function loop(){
   update();
-  sendPlayerUpdate(); // multiplayer.js에서 정의; 솔로 모드면 no-op
+  sendPlayerUpdate(); // 위치/상태 ~30fps 전송
+  sendHostState();    // P1만: 전체 게임 상태 2초마다 동기화
   draw();
   requestAnimationFrame(loop);
 }

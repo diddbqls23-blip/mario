@@ -53,10 +53,16 @@ io.on('connection', (socket) => {
     if (roomId) socket.to(roomId).emit('partner-goal');
   });
 
-  // 코인/적/점수 상태 동기화 릴레이
+  // 코인/적/파워업/보스 등 게임 이벤트 릴레이
   socket.on('game-event', (data) => {
     const roomId = socket.data.roomId;
     if (roomId) socket.to(roomId).emit('game-event', data);
+  });
+
+  // P1→P2 전체 게임 상태 동기화 (호스트 권한)
+  socket.on('host-state', (data) => {
+    const roomId = socket.data.roomId;
+    if (roomId) socket.to(roomId).emit('host-state', data);
   });
 
   // 플레이어 사망 → 상대방에게 레벨 리셋 알림
